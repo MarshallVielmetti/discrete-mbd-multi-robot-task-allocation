@@ -1,0 +1,3 @@
+[submodule "external/discrete-mbd"]
+	path = external/discrete-mbd
+	url = https://github.com/joonlee16/discrete-mbd

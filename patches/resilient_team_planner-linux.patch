@@ -1,0 +1,74 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4014448..2200c68 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -6,7 +6,11 @@ option(CXX "enable C++ compilation" ON)
+ if(CXX)
+     enable_language(CXX)
+ endif()
+ set(CMAKE_CXX_STANDARD 11)
++if(UNIX AND NOT APPLE)
++    # Gurobi's bundled Linux C++ library uses GCC's pre-C++11 string ABI.
++    add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
++endif()
+ 
+ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+ if(NOT CMAKE_BUILD_TYPE)
+@@ -22,6 +26,7 @@ if(MSVC AND MT)
+ endif()
+ 
+ find_package(GUROBI REQUIRED)
++find_package(yaml-cpp CONFIG REQUIRED)
+ 
+ if(APPLE)
+     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+@@ -37,7 +42,7 @@ else()
+     include_directories(include src ${GUROBI_INCLUDE_DIRS})
+ endif()
+ 
+-set(TEAMPLANNER_PYTOOL ON)
++option(TEAMPLANNER_PYTOOL "Build the optional Python module" OFF)
+ if(TEAMPLANNER_PYTOOL)
+     find_package(Python COMPONENTS Interpreter NumPy)
+     find_package(Boost REQUIRED COMPONENTS python)
+@@ -53,18 +58,18 @@ add_library(TeamPlannerParam src/TaskParam.cpp src/VehicleParam.cpp src/TeamPlan
+ target_link_libraries(TeamPlannerParam ${YAML_CPP_LIBRARIES})
+ 
+ add_library(TeamPlannerVar src/VehicleVar.cpp src/TaskVar.cpp)
+-target_link_libraries(TeamPlannerVar TeamPlannerParam ${GUROBI_LIBRARY} ${GUROBI_CXX_LIBRARY})
++target_link_libraries(TeamPlannerVar TeamPlannerParam ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+ 
+ add_library(TeamPlannerGraph src/Graph.cpp)
+ target_link_libraries(TeamPlannerGraph ${YAML_CPP_LIBRARIES})
+ 
+ add_library(FlowConverter src/FlowConverter.cpp)
+-target_link_libraries(FlowConverter TeamPlannerGraph LocalMath ${YAML_CPP_LIBRARIES} ${GUROBI_LIBRARY} ${GUROBI_CXX_LIBRARY})
++target_link_libraries(FlowConverter TeamPlannerGraph LocalMath ${YAML_CPP_LIBRARIES} ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+ 
+ add_library(TeamPlannerCallback src/TeamPlannerCallback.cpp)
+ 
+ add_library(TeamPlanner src/TeamPlanner.cpp)
+-target_link_libraries(TeamPlanner TeamPlannerGraph TeamPlannerParam TeamPlannerVar TeamPlannerCallback FlowConverter LocalMath ${GUROBI_LIBRARY} ${GUROBI_CXX_LIBRARY})
++target_link_libraries(TeamPlanner TeamPlannerGraph TeamPlannerParam TeamPlannerVar TeamPlannerCallback FlowConverter LocalMath ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+ 
+ add_executable(main src/main.cpp)
+ target_link_libraries(main TeamPlanner)
+diff --git a/FindGUROBI.cmake b/FindGUROBI.cmake
+index 3a3d40a..8448475 100644
+--- a/FindGUROBI.cmake
++++ b/FindGUROBI.cmake
+@@ -1,8 +1,11 @@
+-set(GUROBI_DIR /Library/gurobi1000/macos_universal2/)
+-set(GUROBI_HOME /Library/gurobi1000/macos_universal2/)
++set(GUROBI_HOME "$ENV{GUROBI_HOME}" CACHE PATH "Gurobi installation directory")
++if(NOT GUROBI_HOME)
++    set(GUROBI_HOME /opt/gurobi951/linux64)
++endif()
++set(GUROBI_DIR ${GUROBI_HOME})
+ 
+ find_library(GUROBI_LIBRARY
+-    NAMES gurobi100     # This should be your gurobi version (removing the last digit)
++    NAMES gurobi gurobi120 gurobi110 gurobi100 gurobi95 gurobi91 gurobi90
+     HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME}
+     PATH_SUFFIXES lib)
+ 

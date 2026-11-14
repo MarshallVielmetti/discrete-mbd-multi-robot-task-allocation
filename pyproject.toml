@@ -1,0 +1,18 @@
+[project]
+name = "heteromrta"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+    "jax[cuda12]==0.4.38",
+    "matplotlib>=3.1,<4",
+    "natsort==8.4.0",
+    "numpy>=1.24.4",
+    "pandas>=2.0.3",
+    "pyyaml>=5.3,<7",
+    "ray==2.10.0",
+    "scipy==1.10.1",
+    "tensorboard==2.14.0",
+    "torch==2.8.0",
+]
